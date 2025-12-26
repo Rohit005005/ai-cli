@@ -7,7 +7,7 @@ export interface AuthToken {
   refresh_token?: string;
   token_type?: string;
   scope?: string;
-  expires_at?: number;
+  expires_in?: number;
 }
 
 export const getStoredToken = async () => {
@@ -16,7 +16,7 @@ export const getStoredToken = async () => {
     const token = JSON.parse(data);
     return token;
   } catch (error) {
-    return null;
+    return false;
   }
 };
 
@@ -29,8 +29,8 @@ export const storeToken = async (token: AuthToken) => {
       refresh_token: token.refresh_token,
       token_type: token.token_type || "Bearer",
       scope: token.scope,
-      expires_at: token.expires_at
-        ? new Date(Date.now() + token.expires_at * 1000).toISOString()
+      expires_in: token.expires_in
+        ? new Date(Date.now() + token.expires_in * 1000).toISOString()
         : null,
       created_at: new Date().toISOString(),
     };
@@ -54,22 +54,22 @@ export const clearStoredToken = async () => {
 
 export const isTokenExpired = async () => {
   const token = await getStoredToken();
-  if (!token || !token.expires_at) {
+  if (!token || !token.expires_in) {
     return true;
   }
 
-  const expiresAt = new Date(token.expires_at);
+  const expiresIn = new Date(token.expires_in);
   const now = new Date();
 
-  return expiresAt.getTime() - now.getTime() < 5 * 60 * 1000;
+  return expiresIn.getTime() - now.getTime() < 5 * 60 * 1000;
 };
 
 export const requireAuth = async () => {
-  const token = getStoredToken();
+  const token = await getStoredToken();
 
   if (!token) {
     console.log(
-      chalk.red("Not authenticated, Please run 'ai-cli login' first"),
+      chalk.yellow("Not authenticated, Please run 'ai-cli login' first."),
     );
 
     process.exit(1);

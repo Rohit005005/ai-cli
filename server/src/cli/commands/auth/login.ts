@@ -17,8 +17,10 @@ import dotenv from "dotenv";
 import { prisma } from "../../../lib/prisma";
 import {
   AuthToken,
+  clearStoredToken,
   getStoredToken,
   isTokenExpired,
+  requireAuth,
   storeToken,
 } from "../../../lib/token";
 
@@ -165,8 +167,8 @@ export async function loginAction(opts: any) {
 
 async function pollForToken(
   authClient: AuthClient,
-  clientId: string,
   device_code: string,
+  clientId: string,
   initialInterval: number,
 ): Promise<AuthToken> {
   let pollingInterval = initialInterval;
@@ -211,11 +213,11 @@ async function pollForToken(
               pollingInterval += 5;
               break;
             case "access_denied":
-              console.error("Access was denied by the user");
-              return;
+              console.error("Access was denied by the user.");
+              process.exit(1);
             case "expired_token":
               console.error("The device code has expired. Please try again.");
-              return;
+              process.exit(1);
             default:
               spinner.stop();
               logger.error(`Error: ${error.error_description}`);
@@ -233,6 +235,64 @@ async function pollForToken(
   });
 }
 
+export async function logoutAction() {
+  intro(chalk.bold("Logout"));
+
+  const token = await getStoredToken();
+
+  if (!token) {
+    console.log(chalk.yellow("You are not logged in !!"));
+    process.exit(0);
+  }
+
+  const shoudlLogout = await confirm({
+    message: "Are you sure you want to logout ??",
+    initialValue: false,
+  });
+
+  if (isCancel(shoudlLogout) || !shoudlLogout) {
+    cancel("Logout Cancelled !!");
+    process.exit(0);
+  }
+
+  const cleared = await clearStoredToken();
+
+  if (cleared) {
+    outro(chalk.green("Successfully logged out !!"));
+  } else {
+    console.log(chalk.yellow("Could not clear token file."));
+  }
+}
+
+export async function whoamiAction() {
+  const token = await requireAuth();
+
+  if (!token.access_token) {
+    console.log("No access token found. Please login !!");
+    process.exit(1);
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      sessions: {
+        some: {
+          token: token.access_token,
+        },
+      },
+    },
+    select: {
+      name: true,
+      email: true,
+      image: true,
+    },
+  });
+
+  console.log(
+    chalk.bold.greenBright(`\n User: ${user?.name}
+    Email: ${user?.email}`),
+  );
+}
+
 //commander setup
 
 export const login = new Command("login")
@@ -240,3 +300,13 @@ export const login = new Command("login")
   .option("--server-url <url>", "The Better Auth server URL", URL)
   .option("--client-id <id>", "The OAuth client ID", CLIENT_ID)
   .action(loginAction);
+
+export const logout = new Command("logout")
+  .description("Logout and clear stored credentials")
+  .option("--server-url <url>", "THe Better Auth server URL", URL)
+  .action(logoutAction);
+
+export const whoami = new Command("whoami")
+  .description("Show current authenticated user")
+  .option("--server-url <url>", "THe Better Auth server URL", URL)
+  .action(whoamiAction);
