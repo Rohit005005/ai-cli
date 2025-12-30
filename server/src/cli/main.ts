@@ -4,6 +4,7 @@ import figlet from "figlet";
 
 import { Command } from "commander";
 import { login, logout, whoami } from "./commands/auth/login";
+import { wakeUp } from "./commands/ai/wakeUp";
 
 dotenv.config();
 
@@ -26,7 +27,8 @@ async function main() {
     .description("AI CLI tool for ai stuff in terminal !!")
     .addCommand(login)
     .addCommand(logout)
-    .addCommand(whoami);
+    .addCommand(whoami)
+    .addCommand(wakeUp);
 
   program.action(() => {
     program.help();
