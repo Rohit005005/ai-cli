@@ -90,6 +90,7 @@ export function getEnabledToolNames() {
   const names = availableTools.filter((tl) => tl.enabled).map((tl) => tl.name);
 
   console.log(chalk.gray(`getEnabledToolNames returning: `, names));
+  return names;
 }
 
 export function resetTools() {
