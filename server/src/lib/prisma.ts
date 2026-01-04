@@ -1,20 +1,14 @@
-// import "dotenv/config";
-// import { PrismaPg } from "@prisma/adapter-pg";
-// import { PrismaClient } from "../lib/generated/prisma/client";
-
-// const connectionString = `${process.env.DATABASE_URL}`;
-
-// const adapter = new PrismaPg({ connectionString });
-// const prisma = new PrismaClient({ adapter });
-
-// export { prisma };
-
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
 import net from "net";
+
+const envPath = path.resolve(__dirname, "../../.env");
+
+dotenv.config({ path: envPath });
 
 if (net.setDefaultAutoSelectFamilyAttemptTimeout) {
   net.setDefaultAutoSelectFamilyAttemptTimeout(10000);

@@ -6,6 +6,7 @@ import { prisma } from "../../../lib/prisma";
 import { getStoredToken } from "../../../lib/token";
 import { startChat } from "../../ai/chat/chat";
 import { startToolChat } from "../../ai/chat/tool";
+import { startAgentChat } from "../../ai/chat/agent";
 
 export const wakeUpAction = async () => {
   const token = await getStoredToken();
@@ -74,7 +75,7 @@ export const wakeUpAction = async () => {
       await startToolChat();
       break;
     case "agent":
-      console.log(chalk.green("Agentic mode is selected !!"));
+      await startAgentChat();
       break;
   }
 };

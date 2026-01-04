@@ -1,6 +1,5 @@
 import { google } from "@ai-sdk/google";
 import chalk from "chalk";
-import { join } from "../lib/generated/prisma/internal/prismaNamespace";
 
 export const availableTools = [
   {

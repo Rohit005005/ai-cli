@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import boxen from "boxen";
-import { marked } from "marked";
-import { intro, outro, cancel, isCancel, text } from "@clack/prompts";
+import { marked, Renderer, Tokens } from "marked";
+import { intro, outro, isCancel, text } from "@clack/prompts";
 import yoctoSpinner from "yocto-spinner";
 import { AiService } from "../services/ai.service";
 import {
@@ -12,7 +12,6 @@ import {
 import { getStoredToken } from "../../../lib/token";
 import { prisma } from "../../../lib/prisma";
 import { ModelMessage } from "ai";
-import TerminalRenderer from "marked-terminal";
 
 export type startChatType = {
   mode: string;
@@ -40,22 +39,77 @@ export type conversationType = {
   updatedAt: Date;
 };
 
-const terminalRenderer = new TerminalRenderer({
-  code: chalk.cyan,
-  blockquote: chalk.gray.italic,
-  heading: chalk.green.bold,
-  firstHeading: chalk.magenta.underline.bold,
-  hr: chalk.reset,
-  listitem: chalk.reset,
-  list: chalk.reset,
-  paragraph: chalk.reset,
-  strong: chalk.bold,
-  em: chalk.italic,
-  codespan: chalk.yellow.bgBlack,
-  del: chalk.dim.gray.strikethrough,
-  link: chalk.blue.underline,
-  href: chalk.blue.underline,
-});
+class CustomTerminalRenderer extends Renderer {
+  // FIX: 'code' now receives a single object containing the properties
+  code({
+    text,
+    lang,
+    escaped,
+  }: {
+    text: string;
+    lang?: string;
+    escaped?: boolean;
+  }): string {
+    return "\n" + chalk.cyan(text) + "\n";
+  }
+
+  blockquote({ text }: { text: string }): string {
+    return chalk.gray.italic(text);
+  }
+
+  heading({ text, depth }: { text: string; depth: number }): string {
+    const style = depth === 1 ? chalk.magenta.underline.bold : chalk.green.bold;
+    return "\n" + style(text) + "\n";
+  }
+
+  hr(): string {
+    return chalk.gray("----------------------------------------\n");
+  }
+
+  list(token: Tokens.List): string {
+    const body = token.items.map((item) => this.listitem(item)).join("");
+    return body + "\n";
+  }
+
+  listitem(item: Tokens.ListItem): string {
+    const content = marked.parseInline(item.text, { renderer: this }) as string;
+    return `  • ${content}\n`;
+  }
+
+  paragraph({ text }: { text: string }): string {
+    return text + "\n";
+  }
+
+  strong({ text }: { text: string }): string {
+    return chalk.bold(text);
+  }
+
+  em({ text }: { text: string }): string {
+    return chalk.italic(text);
+  }
+
+  codespan({ text }: { text: string }): string {
+    return chalk.yellow.bgBlack(` ${text} `);
+  }
+
+  del({ text }: { text: string }): string {
+    return chalk.dim.gray.strikethrough(text);
+  }
+
+  link({
+    href,
+    title,
+    text,
+  }: {
+    href: string;
+    title?: string | null;
+    text: string;
+  }): string {
+    return chalk.blue.underline(text);
+  }
+}
+
+const terminalRenderer = new CustomTerminalRenderer();
 
 const aiService = new AiService();
 const chatService = new ChatService();

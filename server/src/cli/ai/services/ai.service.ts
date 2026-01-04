@@ -1,10 +1,10 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { LanguageModel, ModelMessage, streamText } from "ai";
-import { config } from "../../../config/gemini.config";
 import chalk from "chalk";
+import { config } from "../../config/gemini.config";
 
 export class AiService {
-  private model: LanguageModel;
+  public model: LanguageModel;
   constructor() {
     if (!config.googleApiKey) {
       throw new Error("Gemini api key not set in env !!");
@@ -20,14 +20,6 @@ export class AiService {
 
     this.model = google(config.model);
   }
-
-  // /**
-  //  * @params {Array} messages
-  //  * @params {Function} onChunk
-  //  * @params {Object} tools
-  //  * @params {Function} onToolCall
-  //  * @returns {Promise<Object>}
-  //  */
 
   async sendMessage(
     messages: ModelMessage[],
@@ -97,8 +89,6 @@ export class AiService {
       throw error;
     }
   }
-
-  //geting non streaming response
 
   async getMessage(messages: ModelMessage[], tools = undefined) {
     let fullResponse = "";
